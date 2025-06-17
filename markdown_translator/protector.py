@@ -23,7 +23,8 @@ class MarkdownProtector:
             'code': {},
             'indent': {},
             'table': {},
-            'html': {}
+            'html': {},
+            'obsidian': {}
         }
     
     def protect(self, text: str) -> str:
@@ -42,6 +43,7 @@ class MarkdownProtector:
         protected_text, self.protected_blocks['yaml'] = self._protect_yaml_front_matter(protected_text)
         protected_text, self.protected_blocks['math'] = self._protect_math_blocks(protected_text)
         protected_text, self.protected_blocks['code'] = self._protect_code_blocks(protected_text)
+        protected_text, self.protected_blocks['obsidian'] = self._protect_obsidian_links(protected_text)
         protected_text, self.protected_blocks['indent'] = self._protect_indent_blocks(protected_text)
         protected_text, self.protected_blocks['table'] = self._protect_table_blocks(protected_text)
         protected_text, self.protected_blocks['html'] = self._protect_html_blocks(protected_text)
@@ -64,6 +66,7 @@ class MarkdownProtector:
         restored_text = self._restore_html_blocks(restored_text, self.protected_blocks['html'])
         restored_text = self._restore_table_blocks(restored_text, self.protected_blocks['table'])
         restored_text = self._restore_indent_blocks(restored_text, self.protected_blocks['indent'])
+        restored_text = self._restore_obsidian_links(restored_text, self.protected_blocks['obsidian'])
         restored_text = self._restore_code_blocks(restored_text, self.protected_blocks['code'])
         restored_text = self._restore_math_blocks(restored_text, self.protected_blocks['math'])
         restored_text = self._restore_yaml_front_matter(restored_text, self.protected_blocks['yaml'])
@@ -174,6 +177,50 @@ class MarkdownProtector:
         result = text
         for placeholder, code_block in code_blocks.items():
             result = result.replace(placeholder, code_block)
+        return result
+    
+    def _protect_obsidian_links(self, text: str) -> Tuple[str, Dict[str, str]]:
+        """
+        옵시디언 링크를 보호하기 위해 플레이스홀더로 치환
+        
+        지원하는 패턴:
+        - [[링크]]
+        - ![[임베드]]
+        - [[링크|앨리어스]]
+        - [[링크#헤딩]]
+        - [[링크^블록ID]]
+        
+        Args:
+            text: 입력 텍스트
+            
+        Returns:
+            (보호된 텍스트, 옵시디언 링크 딕셔너리)
+        """
+        obsidian_blocks = {}
+        protected_text = text
+        
+        # 옵시디언 링크 패턴들
+        # ![[...]] (임베드) 또는 [[...]] (일반 링크)
+        # 내부에 |, #, ^ 등의 특수 문자 포함 가능
+        obsidian_pattern = r'(!?\[\[[^\[\]]*?\]\])'
+        matches = list(re.finditer(obsidian_pattern, text))
+        
+        # 역순으로 처리하여 인덱스 변화 방지
+        for i, match in enumerate(reversed(matches)):
+            placeholder = f"__OBSIDIAN_LINK_{len(matches) - 1 - i}__"
+            obsidian_content = match.group(1)
+            obsidian_blocks[placeholder] = obsidian_content
+            
+            # 플레이스홀더로 치환
+            protected_text = protected_text[:match.start()] + placeholder + protected_text[match.end():]
+        
+        return protected_text, obsidian_blocks
+
+    def _restore_obsidian_links(self, text: str, obsidian_blocks: Dict[str, str]) -> str:
+        """플레이스홀더를 원래 옵시디언 링크로 복원"""
+        result = text
+        for placeholder, obsidian_link in obsidian_blocks.items():
+            result = result.replace(placeholder, obsidian_link)
         return result
     
     def _protect_indent_blocks(self, text: str) -> Tuple[str, Dict[str, str]]:
