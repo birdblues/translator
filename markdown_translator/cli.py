@@ -16,6 +16,7 @@ def main():
             print(f"번역 시작: {file_path}")
             original = path.read_text()
             formatted = MarkdownFormatter().format(original)
+            # formatted = original
             translated = MarkdownTranslator().translate(formatted)
             output = path.with_stem(path.stem + '_ko')
             output.write_text(translated)

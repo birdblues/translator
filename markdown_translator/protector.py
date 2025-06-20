@@ -87,7 +87,7 @@ class MarkdownProtector:
         protected_text = text
         
         # YAML front matter 패턴
-        yaml_pattern = r'^---\n([\s\S]*?)\n---'
+        yaml_pattern = r'(?:^|\n)---\n([\s\S]*?)\n---(?:\n|$)'
         match = re.search(yaml_pattern, text)
         
         if match:
@@ -95,8 +95,8 @@ class MarkdownProtector:
             yaml_content = match.group(0)
             yaml_blocks[placeholder] = yaml_content
             
-            # 플레이스홀더로 치환
-            protected_text = protected_text[:match.start()] + placeholder + protected_text[match.end():]
+            # 플레이스홀더로 치환 : 줄바꿈을 하지않으면 llm이 제거함
+            protected_text = protected_text[:match.start()] + placeholder + '\n' + protected_text[match.end():]
         
         return protected_text, yaml_blocks
     
@@ -447,3 +447,9 @@ class MarkdownProtector:
         for placeholder, html_block in html_blocks.items():
             result = result.replace(placeholder, html_block)
         return result
+    
+if __name__ == "__main__":
+    # 번역기 생성
+    protector = MarkdownProtector()
+     
+

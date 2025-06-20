@@ -15,7 +15,7 @@ class AdaptiveMarkdownChunker:
     
     def __init__(
         self, 
-        max_tokens: int = 1000,
+        max_tokens: int = 1024,
         encoding_name: str = "cl100k_base",
         chunk_overlap: int = 0
     ):
@@ -153,7 +153,7 @@ class AdaptiveMarkdownChunker:
 if __name__ == "__main__":
     # 청킹 객체 생성
     chunker = AdaptiveMarkdownChunker(
-        max_tokens=1000,
+        max_tokens=1024,
         chunk_overlap=0
     )
     
